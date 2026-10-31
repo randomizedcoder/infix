@@ -13,3 +13,4 @@
 /test/spec/Readme.adoc
 __pycache__/
 /src/*/vendor/
+/result*
