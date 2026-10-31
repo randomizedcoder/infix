@@ -119,6 +119,9 @@ PARSERS = {
     "golangci-lint-comprehensive": parse_go,
     "gosec": parse_gosec,
     "codechecker": parse_codechecker,
+    # The fuzz runs: one line per distinct crash, in the gcc format.
+    "fuzz": parse_gcc,
+    "go-fuzz": parse_gcc,
 }
 
 

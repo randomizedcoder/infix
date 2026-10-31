@@ -24,6 +24,8 @@
         ./nix/parts/deps.nix
         ./nix/parts/build.nix
         ./nix/parts/analysis.nix
+        ./nix/parts/fuzz.nix
+        ./nix/parts/report.nix
         ./nix/parts/dev.nix
       ];
     };

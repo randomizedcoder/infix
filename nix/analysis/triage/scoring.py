@@ -17,7 +17,7 @@ CLASSES = [
     ("injection", 10, (r"infix-shell-format|infix-system-nonliteral|infix-go-request-to-exec"
                       r"|\bG204\b|\bG702\b|CWE-78|CWE-88|\bS60[2-9]\b|\bB60[2-9]\b|shell\.(system|popen)"
                       r"|format-nonliteral|CWE-134|\bS307\b|\bB307\b")),
-    ("memory-safety", 9, (r"ArrayBound|NullDereference|null-dereference|use-after-free|double-free"
+    ("memory-safety", 9, (r"^(go-)?fuzz |ArrayBound|NullDereference|null-dereference|use-after-free|double-free"
                          r"|buffer-overflow|out-of-bounds|Wanalyzer-(?!.*leak)(?!fd-)|bufferAccessOutOfBounds"
                          r"|arrayIndexOutOfBounds|nullPointer|uninitvar|core\.|unix\.Malloc|unix\.cstring"
                          r"|infix-unbounded-copy|infix-snprintf-return|buffer\.(strcpy|strcat|sprintf|gets)"

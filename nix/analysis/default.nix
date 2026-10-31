@@ -143,7 +143,7 @@ let
     ''
       mkdir -p "$out"
       cp -r --no-preserve=mode ${tiers.analysis-deep}/. "$out/"
-      ${lib.concatMapStrings (d: "cp -r --no-preserve=mode ${d}/. \"$out/\"\n") extraDirs}
+      ${lib.concatMapStrings (d: "cp -rL --no-preserve=mode ${d}/. \"$out/\"\n") extraDirs}
       python3 ${triage}/triage "$out" --output-dir "$out"
       head -40 "$out/top.txt"
     '';
@@ -158,6 +158,7 @@ in
 {
   inherit tools tiers mkAnalysisTool mkReport;
 
-  packages = tiers // { analysis-report = mkReport { }; } // lib.mapAttrs' (n: v: lib.nameValuePair "analysis-${n}" v) tools;
+  # analysis-report is ../parts/report.nix: it adds the fuzz runs.
+  packages = tiers // lib.mapAttrs' (n: v: lib.nameValuePair "analysis-${n}" v) tools;
   checks = { inherit (tiers) analysis-quick; inherit triage-test; };
 }
