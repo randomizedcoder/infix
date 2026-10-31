@@ -4,7 +4,8 @@
 #
 #   version, meta   for every Infix derivation.  The version leaves out the git
 #                   revision, or every commit would rebuild everything.
-#   srcFor <dir>    one directory under src/, so editing confd does not rebuild webui.
+#   srcFor <dir>    one directory under src/ (plus a Go module's local replaces), so
+#                   editing confd does not rebuild webui.
 #   src.c           every C component under src/, for the analysis tools.
 #   src.yang        src/confd/yang, for yanglint and the libyang-based harnesses.
 #   src.all         the tracked tree, for the whole-tree linters.
@@ -41,7 +42,12 @@ in
   inherit root cDirs goModules;
   version = "0-unstable";
 
-  srcFor = dir: fileset.toSource { inherit root; fileset = clean (root + "/src/${dir}"); };
+  # webui and yangerd replace github.com/kernelkit/infix/src/features with ../features.
+  srcFor = dir: fileset.toSource {
+    inherit root;
+    fileset = clean (fileset.unions (map (d: root + "/src/${d}")
+      ([ dir ] ++ lib.optional (lib.elem dir [ "webui" "yangerd" ]) "features")));
+  };
 
   src = {
     c = fileset.toSource {

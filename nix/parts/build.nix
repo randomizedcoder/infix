@@ -4,7 +4,8 @@
 
 {
   perSystem = { infix, lib, ... }: {
-    packages = infix.cPkgs.packages;
-    checks = lib.mapAttrs' (n: v: lib.nameValuePair "build-${n}" v) infix.cPkgs.checks;
+    packages = infix.cPkgs.packages // infix.goPkgs.packages;
+    checks = lib.mapAttrs' (n: v: lib.nameValuePair "build-${n}" v) infix.cPkgs.checks
+      // lib.mapAttrs' (n: v: lib.nameValuePair "go-test-${n}" v) infix.goPkgs.checks;
   };
 }
