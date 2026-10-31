@@ -1,0 +1,205 @@
+# nix/analysis/semgrep-rules.yaml
+#
+# Local semgrep rules for the risks particular to Infix (the sandbox has no
+# registry access).  Each finding is a lead: whether it is a bug depends on what
+# restricts the value, usually a YANG pattern on the leaf it came from.
+
+rules:
+  # ── C: shell commands built with printf formats ──────────────────────────
+  - id: infix-shell-format-string
+    message: >-
+      $FN() runs its formatted string through /bin/sh; a %s argument from
+      configuration or the network is a command injection unless its YANG type
+      or a check rules out shell metacharacters.  Prefer an argv exec
+      (libsrx systemv(), run()).
+    languages: [c]
+    severity: WARNING
+    metadata: { category: injection, cwe: "CWE-78" }
+    patterns:
+      - pattern-either:
+          - pattern: systemf($FMT, ...)
+          - pattern: popenf($MODE, $FMT, ...)
+          - pattern: shellf($FMT, ...)
+          - pattern: cni_popen($FMT, ...)
+      - metavariable-regex:
+          metavariable: $FMT
+          regex: '.*%[-0-9.]*s.*'
+      - focus-metavariable: $FMT
+
+  - id: infix-system-nonliteral
+    message: system()/popen() with a command that is not a string literal.
+    languages: [c]
+    severity: WARNING
+    metadata: { category: injection, cwe: "CWE-78" }
+    pattern-either:
+      - patterns:
+          - pattern: system($CMD)
+          - pattern-not: system("...")
+      - patterns:
+          - pattern: popen($CMD, $M)
+          - pattern-not: popen("...", $M)
+
+  - id: infix-unchecked-system
+    message: The result of system() or chdir() is discarded, so a failure goes unnoticed.
+    languages: [c]
+    severity: INFO
+    metadata: { category: error-handling, cwe: "CWE-252" }
+    pattern-either:
+      - pattern: system(...);
+      - pattern: chdir(...);
+
+  # ── C: paths built from configuration ────────────────────────────────────
+  - id: infix-path-format-string
+    message: >-
+      $FN() builds a file path with %s; a name containing "/" or ".." writes or
+      removes outside the intended directory.
+    languages: [c]
+    severity: INFO
+    metadata: { category: path-traversal, cwe: "CWE-22" }
+    patterns:
+      - pattern-either:
+          - pattern: fopenf($MODE, $FMT, ...)
+          - pattern: erasef($FMT, ...)
+          - pattern: writesf($V, $MODE, $FMT, ...)
+          - pattern: writedf($V, $MODE, $FMT, ...)
+      - metavariable-regex:
+          metavariable: $FMT
+          regex: '.*%[-0-9.]*s.*'
+      - focus-metavariable: $FMT
+
+  # ── C: unbounded string functions ────────────────────────────────────────
+  - id: infix-unbounded-copy
+    message: $FN() has no bound on the destination; use snprintf()/strlcpy().
+    languages: [c]
+    severity: WARNING
+    metadata: { category: memory-safety, cwe: "CWE-120" }
+    pattern-either:
+      - pattern: sprintf($B, ...)
+      - pattern: vsprintf($B, ...)
+      - pattern: strcpy($D, $S)
+      - pattern: strcat($D, $S)
+      - pattern: gets($B)
+
+  - id: infix-snprintf-return-as-length
+    message: >-
+      snprintf() returns the length it wanted to write, not what it wrote; using
+      it to advance a pointer or length overruns the buffer on truncation.
+    languages: [c]
+    severity: WARNING
+    metadata: { category: memory-safety, cwe: "CWE-787" }
+    pattern-either:
+      - pattern: $P += snprintf($P, ...);
+      - pattern: $N += snprintf($B + $N, ...);
+      - pattern: $N += snprintf(&$B[$N], ...);
+
+  - id: infix-format-nonliteral
+    message: Format string is not a literal.
+    languages: [c]
+    severity: WARNING
+    metadata: { category: injection, cwe: "CWE-134" }
+    patterns:
+      - pattern-either:
+          - pattern: printf($F)
+          - pattern: fprintf($S, $F)
+          - pattern: syslog($P, $F)
+      - pattern-not: printf("...")
+      - pattern-not: fprintf($S, "...")
+      - pattern-not: syslog($P, "...")
+
+  # ── Go: request data into commands and paths ─────────────────────────────
+  - id: infix-go-request-to-exec
+    message: Request data reaches an exec.Command argument.
+    languages: [go]
+    severity: ERROR
+    metadata: { category: injection, cwe: "CWE-88" }
+    mode: taint
+    pattern-sources:
+      - pattern-either:
+          - pattern: ($R *http.Request).FormValue(...)
+          - pattern: ($R *http.Request).PostFormValue(...)
+          - pattern: ($R *http.Request).PathValue(...)
+          - pattern: ($R *http.Request).URL.Query()
+          - pattern: ($R *http.Request).Header.Get(...)
+          - pattern: ($R *http.Request).Form
+    pattern-sinks:
+      - pattern-either:
+          - pattern: exec.Command(...)
+          - pattern: exec.CommandContext(...)
+
+  - id: infix-go-request-to-path
+    message: Request data reaches a file path.
+    languages: [go]
+    severity: WARNING
+    metadata: { category: path-traversal, cwe: "CWE-22" }
+    mode: taint
+    pattern-sources:
+      - pattern-either:
+          - pattern: ($R *http.Request).FormValue(...)
+          - pattern: ($R *http.Request).PostFormValue(...)
+          - pattern: ($R *http.Request).PathValue(...)
+          - pattern: ($R *http.Request).URL.Query()
+          - pattern: ($H *multipart.FileHeader).Filename
+    pattern-sinks:
+      - pattern-either:
+          - pattern: os.Open(...)
+          - pattern: os.OpenFile(...)
+          - pattern: os.ReadFile(...)
+          - pattern: os.WriteFile(...)
+          - pattern: os.Create(...)
+          - pattern: os.Remove(...)
+          - pattern: filepath.Join(...)
+          - pattern: http.ServeFile($W, $R, ...)
+    pattern-sanitizers:
+      - pattern: filepath.Base(...)
+
+  - id: infix-go-secret-compare
+    message: >-
+      A token or password compared with == or != takes time proportional to the
+      matching prefix; use crypto/subtle.ConstantTimeCompare.
+    languages: [go]
+    severity: WARNING
+    metadata: { category: crypto, cwe: "CWE-208" }
+    patterns:
+      - pattern-either:
+          - pattern: $A == $B
+          - pattern: $A != $B
+      - metavariable-regex:
+          metavariable: $A
+          regex: '(?i).*(token|csrf|secret|passw|hmac|digest).*'
+      - pattern-not: $A == ""
+      - pattern-not: $A != ""
+      - pattern-not: $A == nil
+      - pattern-not: $A != nil
+
+  - id: infix-go-forwarded-header-trust
+    message: >-
+      X-Forwarded-* is set by the client unless a trusted proxy overwrites it;
+      using it for origin or host checks lets the client choose the answer.
+    languages: [go]
+    severity: WARNING
+    metadata: { category: auth, cwe: "CWE-346" }
+    pattern-either:
+      - pattern: $R.Header.Get("X-Forwarded-Host")
+      - pattern: $R.Header.Get("X-Forwarded-For")
+      - pattern: $R.Header.Get("X-Forwarded-Proto")
+
+  - id: infix-go-cookie-flags
+    message: Session cookie set without Secure, HttpOnly or SameSite.
+    languages: [go]
+    severity: INFO
+    metadata: { category: auth, cwe: "CWE-614" }
+    patterns:
+      - pattern: |
+          &http.Cookie{...}
+      - pattern-not: |
+          &http.Cookie{..., HttpOnly: true, ...}
+
+  # ── Python: shell commands ───────────────────────────────────────────────
+  - id: infix-py-shell-true
+    message: subprocess with shell=True and a command that is not a literal.
+    languages: [python]
+    severity: WARNING
+    metadata: { category: injection, cwe: "CWE-78" }
+    patterns:
+      - pattern: subprocess.$F($CMD, ..., shell=True, ...)
+      - pattern-not: subprocess.$F("...", ..., shell=True, ...)

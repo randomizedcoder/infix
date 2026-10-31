@@ -1,0 +1,52 @@
+# Verified false positives, dropped from the ranking: "file:line check  # why".
+# check may be * for every check on that line.  Each was checked by reading the
+# code; ../../docs/ANALYSIS-REPORT.md has the details.
+
+# webui: argv exec with validated or fixed arguments, no shell
+src/webui/internal/handlers/dashboard.go:954 *  # ping argv; target passes net.ParseIP, zone passes validZone
+src/webui/internal/handlers/diagnostics.go:302 G204  # binary from an allowlist; target passes validTarget (no leading -)
+src/webui/internal/handlers/diagnostics.go:474 G702  # getent argv; name passes validTarget
+src/webui/internal/handlers/diagnostics.go:474 G204  # getent argv; name passes validTarget
+src/webui/internal/handlers/configure.go:238 *  # diff over two server-created temp files
+src/webui/internal/handlers/crypt.go:56 *  # mkpasswd method from an allowlist, password on stdin
+src/webui/internal/handlers/system.go:32 G702  # constant path, no arguments
+src/webui/internal/handlers/system.go:315 *  # migrate on an os.CreateTemp path
+src/webui/internal/handlers/logs.go:424 G204  # tail on a path from the logSources allowlist
+src/webui/internal/handlers/logs.go:146 G304  # allowlisted source or an integer index into its rotations
+src/webui/internal/handlers/system.go:331 G304  # os.CreateTemp path
+src/webui/internal/handlers/system.go:763 G304  # os.CreateTemp path
+src/webui/internal/schema/refresh.go:41 G304  # directory from a command-line flag
+src/webui/internal/restconf/client.go:52 G402  # only with -insecure-tls; default target is plain http to localhost
+src/webui/internal/handlers/configure.go:43 *  # cfg-unsaved cookie holds a timestamp, not a secret
+src/webui/internal/handlers/configure.go:53 *  # cfg-unsaved cookie holds a timestamp, not a secret
+
+# statd: LIST_REMOVE updates the head through le_prev, which the analyzers do not follow
+src/statd/avahi.c:295 -Wanalyzer-double-free  # drain loop: LIST_FIRST, LIST_REMOVE, free
+src/statd/avahi.c:326 unix.Malloc  # drain loop
+src/statd/avahi.c:330 unix.Malloc  # drain loop
+src/statd/avahi.c:907 unix.Malloc  # drain loop
+src/statd/avahi.c:994 unix.Malloc  # drain loop
+src/statd/avahi.c:1031 unix.Malloc  # drain loop
+src/statd/statd.c:395 unix.Malloc  # TAILQ drain loop
+
+# confd: analyzer artefacts
+src/confd/src/hardware.c:432 -Wanalyzer-double-free  # p = realloc(p) in a loop frees each block once
+src/confd/src/hardware.c:466 -Wanalyzer-double-free  # p = realloc(p) in a loop frees each block once
+src/confd/src/hardware.c:743 -Wanalyzer-double-free  # block-scoped, assigned and freed once per call
+src/confd/bin/pppmon.c:38 security.ArrayBound  # netlink idiom: attributes follow nlh in the same struct
+src/confd/bin/pppmon.c:41 buffer.memcpy  # ifname length checked against IFNAMSIZ in main()
+src/confd/bin/pppmon.c:152 -Wanalyzer-fd-leak  # only when fork() fails, and the process exits
+src/confd/src/locate.c:77 security.ArrayBound  # bounded by the len < sizeof(buf) - 1 loop condition
+src/confd/src/support.c:148 security.ArrayBound  # strcspn index is at most the NUL from fgets
+src/confd/src/if-qos.c:434 security.ArrayBound  # trust is a YANG enumeration: at most two words
+src/confd/src/if-vlan.c:107 -Wanalyzer-null-dereference  # leaf has a YANG default
+src/confd/src/if-vlan.c:126 -Wanalyzer-null-dereference  # leaf has a YANG default
+src/confd/src/dhcp-client.c:61 -Wanalyzer-null-argument  # list key, never NULL
+src/confd/src/firewall.c:145 -Wanalyzer-null-argument  # mandatory RPC input
+src/confd/src/firewall.c:173 -Wanalyzer-null-argument  # mandatory RPC input
+src/confd/src/if-bridge-port.c:19 -Wanalyzer-null-argument  # leaf has a YANG default
+src/confd/src/if-bridge.c:305 -Wanalyzer-null-argument  # leaf-list entries always have a value
+src/confd/src/if-wifi.c:613 -Wanalyzer-null-argument  # list key, never NULL
+src/confd/src/syslog.c:318 -Wanalyzer-null-argument  # list key, never NULL
+src/libsrx/src/lyx.c:141 -Wanalyzer-null-argument  # callers pass a container of keyed entries
+src/libsrx/src/srx_val.c:145 -Wanalyzer-null-dereference  # sr_get_node returns SR_ERR_NOT_FOUND, not a NULL value

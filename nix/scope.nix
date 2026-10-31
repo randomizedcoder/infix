@@ -24,8 +24,8 @@ pkgs.lib.makeScope pkgs.newScope (self: {
   # Each of these returns { packages, checks?, apps? } for a part in parts/.
   cPkgs = self.callPackage ./build/c.nix { };
   goPkgs = self.callPackage ./build/go.nix { };
+  compileDb = self.callPackage ./build/compile-db.nix { };
   analysisPkgs = self.callPackage ./analysis { };
   fuzzPkgs = self.callPackage ./fuzz { };
-  reportPkgs = self.callPackage ./analysis/report.nix { };
   dev = self.callPackage ./dev { };
 })

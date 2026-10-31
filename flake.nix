@@ -23,6 +23,7 @@
         ./nix/parts/scope.nix
         ./nix/parts/deps.nix
         ./nix/parts/build.nix
+        ./nix/parts/analysis.nix
         ./nix/parts/dev.nix
       ];
     };

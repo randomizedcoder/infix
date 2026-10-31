@@ -1,0 +1,43 @@
+# golangci-quick.yml
+#
+# Tier 0: fast feedback, for the dev shell (infix-lint-go quick).
+# Kept here rather than in src/ so the analysis does not change the tree.
+
+version: "2"
+
+run:
+  timeout: 5m
+  modules-download-mode: vendor
+
+linters:
+  default: none
+  enable:
+    - govet
+    - errcheck
+    - ineffassign
+    - unused
+    - staticcheck
+  settings:
+    errcheck:
+      exclude-functions:
+        - (io.Closer).Close
+        - (*os.File).Close
+        - fmt.Fprintf
+        - fmt.Fprintln
+        - fmt.Fprint
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+        - shadow
+    staticcheck:
+      checks: ["all", "-SA1019", "-ST1000", "-ST1003"]
+  exclusions:
+    rules:
+      - path: "_test\\.go"
+        linters: [errcheck, unused]
+
+issues:
+  # The defaults (50 per linter, 3 of a kind) silently truncate the report.
+  max-issues-per-linter: 0
+  max-same-issues: 0
