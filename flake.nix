@@ -3,6 +3,8 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Only for semgrep, whose unstable build fails (patchelf on semgrep-core).
+    nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-25.11";
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -21,6 +23,7 @@
         ./nix/parts/scope.nix
         ./nix/parts/deps.nix
         ./nix/parts/build.nix
+        ./nix/parts/dev.nix
       ];
     };
 }

@@ -11,7 +11,10 @@
 
 pkgs.lib.makeScope pkgs.newScope (self: {
   infixLib = self.callPackage ./lib { };
-  versions = import ./versions.nix { inherit pkgs; };
+  versions = import ./versions.nix {
+    inherit pkgs;
+    pkgsStable = inputs.nixpkgs-stable.legacyPackages.${pkgs.stdenv.hostPlatform.system};
+  };
 
   # Buildroot at the submodule's commit, for the sysrepo patches (flake.nix input).
   inherit (inputs) buildroot;
@@ -24,5 +27,5 @@ pkgs.lib.makeScope pkgs.newScope (self: {
   analysisPkgs = self.callPackage ./analysis { };
   fuzzPkgs = self.callPackage ./fuzz { };
   reportPkgs = self.callPackage ./analysis/report.nix { };
-  devShells = self.callPackage ./dev { };
+  dev = self.callPackage ./dev { };
 })

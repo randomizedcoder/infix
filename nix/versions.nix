@@ -3,7 +3,7 @@
 # The toolchains and tools every other file uses, in one place.  Changing one here
 # changes the dev shell, the builds and the checks together.
 
-{ pkgs }:
+{ pkgs, pkgsStable }:
 
 {
   # yangerd's go.mod needs Go 1.26.
@@ -16,7 +16,6 @@
   inherit (pkgs)
     cppcheck
     flawfinder
-    semgrep
     codechecker
     bear
     golangci-lint
@@ -32,4 +31,6 @@
     deadnix
     ;
   staticcheck = pkgs.go-tools;
+  # semgrep-core fails to patchelf in unstable; return to pkgs.semgrep once it builds.
+  inherit (pkgsStable) semgrep;
 }
