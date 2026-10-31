@@ -27,5 +27,6 @@ pkgs.lib.makeScope pkgs.newScope (self: {
   compileDb = self.callPackage ./build/compile-db.nix { };
   analysisPkgs = self.callPackage ./analysis { };
   fuzzPkgs = self.callPackage ./fuzz { };
+  appPkgs = self.callPackage ./apps { };
   dev = self.callPackage ./dev { };
 })

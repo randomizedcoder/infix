@@ -26,6 +26,7 @@
         ./nix/parts/analysis.nix
         ./nix/parts/fuzz.nix
         ./nix/parts/report.nix
+        ./nix/parts/apps.nix
         ./nix/parts/dev.nix
       ];
     };
