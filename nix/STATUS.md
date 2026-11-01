@@ -23,7 +23,7 @@ As of 2026-10-31, on the fork's `nix-flake` branch.
 ## Findings
 
 The top 20 are in [`docs/ANALYSIS-REPORT.md`](docs/ANALYSIS-REPORT.md). The fuzzers found
-one bug, in confd `base64_decode`; the others ran clean.
+one bug, in confd `base64_decode` (fixed in kernelkit/infix#1762); the others ran clean.
 
 ## Known gaps
 
